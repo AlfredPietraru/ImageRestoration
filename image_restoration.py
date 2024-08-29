@@ -61,13 +61,6 @@ class PartialConv(nn.Module):
         new_mask = new_mask.masked_fill_(no_update_holes, 0).to(torch.uint8)
 
         return output, new_mask
-    
-class CompleteDecLayer(nn.Module):
-    def __init__(self, nearest_filter : int, kernel_size = 0):
-        super().__init__()
-        self.upsample = nn.Upsample(size=nearest_filter)
-        self.
-
 
 class CompleteEncLayer(nn.Module):
     def __init__(self, in_channels : int, out_channels : int, kernel_size : int,
@@ -113,9 +106,32 @@ class ImageRestoration(nn.Module):
         self.enc_7 = CompleteEncLayer(512, 512, 3, 2, "relu", True)
         self.enc_8 = CompleteEncLayer(512, 512, 3, 2, "relu", True)
 
-        self.dec9 = 
-            
-        self.flatten = nn.Flatten()
+        self.nearest1 = nn.UpsamplingNearest2d(512, scale_factor=2)
+        self.nearest2 = nn.UpsamplingNearest2d(512, scale_factor=2)
+        self.nearest3 = nn.UpsamplingNearest2d(512, scale_factor=2)
+        self.nearest4 = nn.UpsamplingNearest2d(512, scale_factor=2)
+        self.nearest5 = nn.UpsamplingNearest2d(512, scale_factor=2)
+        self.nearest6 = nn.UpsamplingNearest2d(256, scale_factor=2)
+        self.nearest7 = nn.UpsamplingNearest2d(128, scale_factor=2)
+        self.nearest8 = nn.UpsamplingNearest2d(64, scale_factor=2)
+
+        self.concat1 = torch.cat((self.nearest1, self.enc_1), dim=1)
+        self.concat2 = torch.cat((self.nearest2, self.enc_2), dim=1)
+        self.concat3 = torch.cat((self.nearest3, self.enc_3), dim=1)
+        self.concat4 = torch.cat((self.nearest4, self.enc_4), dim=1)
+        self.concat5 = torch.cat((self.nearest5, self.enc_5), dim=1)
+        self.concat6 = torch.cat((self.nearest6, self.enc_6), dim=1)
+        self.concat7 = torch.cat((self.nearest7, self.enc_7), dim=1)
+        self.concat8 = torch.cat((self.nearest8, self.enc_8), dim=1)
+
+        self.pconv_09 = CompleteEncLayer(512, 512, 3, 1, "leaky_relu", True)
+        self.pconv_10 = CompleteEncLayer(512, 512, 3, 1, "leaky_relu", True)
+        self.pconv_11 = CompleteEncLayer(512, 512, 3, 1, "leaky_relu", True)
+        self.pconv_12 = CompleteEncLayer(512, 512, 3, 1, "leaky_relu", True)
+        self.pconv_13 = CompleteEncLayer(512, 256, 3, 1, "leaky_relu", True)
+        self.pconv_14 = CompleteEncLayer(512, 128, 3, 1, "leaky_relu", True)
+        self.pconv_15 = CompleteEncLayer(512, 64, 3, 1, "leaky_relu", True)
+        self.pconv_16 = CompleteEncLayer(512, 3, 3, 1, "null", False)
 
     def forward(self, input, mask):
         input, mask = self.enc_1(input, mask)
@@ -125,5 +141,8 @@ class ImageRestoration(nn.Module):
         input, mask = self.enc_5(input, mask)
         input, mask = self.enc_6(input, mask)
         input, mask = self.enc_7(input, mask)
-        return self.enc_8(input, mask)
+        input, mask = self.enc_8(input, mask)
+
+        
+        return 
         
