@@ -1,34 +1,16 @@
 import torch
-from image_restoration import ImageRestoration
-from net import PConvUNet
 import preprocessing as prep
+from net import Encoder 
+ORIGINAL = 512
+LATENT = 128
+BATCH_SIZE = 10
 
-def train_loop(model, optimizer, loss_function):
-    model = PConvUNet()
-    loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    model.train()
-    for k in range(1, 10, 1):
-        for i in range(1, 4, 1):
-            original, altered, mask = prep.get_info_image_training(i)
-            output, mask = model(altered, mask)
-            loss = loss_function(original, output)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            print(loss)
-            print("a terminat o imagine")
-        print("gata o epoca")
-    torch.save(model.state_dict(), "./model.pth")
+def reparametrization_technique(averages, variances):
+    e_values = torch.randn(size=[BATCH_SIZE, LATENT, LATENT])
+    return e_values * variances + averages.unsqueeze(dim = -1)
 
-def evaluation(idx : int):
-    model = PConvUNet()
-    model.load_state_dict(torch.load("./model.pth"))
-    model.eval
-    original, altered, mask = prep.get_info_image_training(idx)
-    output, mask = model(altered, mask)
-    prep.debug_image(output)
-    
-    
-# train_loop(model, optimizer, loss_function)
-evaluation(4)
+images = prep.get_only_training_image(0, BATCH_SIZE)
+encoder = Encoder(batch_size=BATCH_SIZE)
+averages, variances = encoder(images)
+results = reparametrization_technique(averages, variances)
+print(results.shape)

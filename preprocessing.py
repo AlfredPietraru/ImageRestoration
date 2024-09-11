@@ -59,6 +59,30 @@ def create_obscured_images(input_folder, output_folder):
     cv2.imwrite(output_path, img.detach().numpy())
 
 
-def create_training_dat():
+def get_full_training_image(idx : int):
+    filename = map_int_to_string(idx)
+    pure_image = cv2.imread(INITIAL_IMAGES_PATH + filename, cv2.IMREAD_COLOR)
+    affected_image = cv2.imread(MODIFIED_TRAINING_IMAGES_PATH + filename, 
+                                cv2.IMREAD_COLOR)
+    pure_image = torch.tensor(pure_image).to(torch.float32).permute((2, 0, 1))
+    affected_image = torch.tensor(affected_image)
+    masks = affected_image == 0
+    mask1, mask2, mask3 = torch.chunk(masks, 3,dim=2)
+    mask = torch.bitwise_and(torch.bitwise_and(mask1, mask2), mask3)
+    affected_image = affected_image.to(torch.float32).permute((2, 0, 1))
+    return pure_image, affected_image, mask.squeeze(dim=-1) 
+
+def get_only_training_image(batch_index : int, batch_size):
+    images_indexes = range(batch_index * batch_size + 1, (batch_index + 1) * batch_size + 1) 
+    filenames = list(map(map_int_to_string, images_indexes))
+    images = torch.zeros(size=(batch_size, 3, SIZE, SIZE))
+    for idx, filename in enumerate(filenames):
+        img = cv2.imread(MODIFIED_TRAINING_IMAGES_PATH + filename, 
+                                cv2.IMREAD_COLOR)
+        images[idx] = torch.tensor(img).permute((2, 0, 1))
+    return images
+
+
+def create_training_data():
     create_initial_images(GROUNDTRUTH_IMAGE_PATH, INITIAL_IMAGES_PATH)
     create_obscured_images(INITIAL_IMAGES_PATH, MODIFIED_TRAINING_IMAGES_PATH)
