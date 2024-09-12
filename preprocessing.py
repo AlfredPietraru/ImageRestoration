@@ -29,6 +29,11 @@ def create_squares_coordinates(length = 20, square_numbers = 20):
     lowerRightPoint = torch.cat([x_axis + squares_sizes, y_axis + squares_sizes], dim=1)
     return torch.cat([upperLeftPoint, upperRightPoint, lowerLeftPoint, lowerRightPoint], dim=1)
 
+def show_image(img : torch.tensor):
+    img = img.to(torch.uint8).permute((1, 2, 0))
+    cv2.imshow("gata", img.detach().numpy())
+    cv2.waitKey(0)
+
 def show_matrix(matrix):
     matrix = matrix.to(torch.uint8)
     cv2.imshow("gata", (matrix * 255).detach().numpy())

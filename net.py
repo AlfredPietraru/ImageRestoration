@@ -39,5 +39,39 @@ class Encoder(nn.Module):
         return mu, variance
 
 class Decoder(nn.Module):
-    def __init__(self):
-        self.__init__()
+    def __init__(self, nr_channels = 1):
+        super().__init__()
+        self.nr_channels = nr_channels
+        self.decoder = nn.Sequential(
+        nn.ConvTranspose2d(nr_channels,out_channels=3, kernel_size=3, stride=1, padding=1),
+        nn.ReLU(),
+        nn.ConvTranspose2d(in_channels=3, out_channels=3, kernel_size=4, stride=2, padding=1),
+        nn.ReLU(),
+        nn.ConvTranspose2d(in_channels=3, out_channels=3, kernel_size=3, stride=1, padding=1),
+        nn.ReLU(),
+        nn.ConvTranspose2d(3, 3, kernel_size=4, stride=2, padding=1),
+        nn.ReLU(),
+        )
+
+    def forward(self, x):
+        x = x.unsqueeze(dim=1)
+        x = self.decoder(x)
+        return x
+    
+class VAE(nn.Module):
+    def __init__(self, batch_size = 10):
+        super(VAE, self).__init__()
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+        self.batch_size = 10
+
+    def reparametrization_technique(self, averages, variances):
+        e_values = torch.randn(size=[self.batch_size, LATENT, LATENT])
+        return e_values * variances + averages.unsqueeze(dim = -1)  
+
+    def forward(self, x):
+        mu, variance = self.encoder(x)
+        z = self.reparametrization_technique(mu, variance)
+        return self.decoder(z), mu, variance 
+
+
