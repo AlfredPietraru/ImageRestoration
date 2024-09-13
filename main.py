@@ -13,8 +13,10 @@ def training_loop(dataloader : DataLoader):
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
     for i in range(EPOCHS):
-      for j in range(1, 81):
-        img, modified, _ = prep.get_full_training_image(j)
+      for _, img_info in  enumerate(dataloader):
+        img, modified, _ = img_info
+        modified = modified.squeeze(dim=0)
+        img = img.squeeze(dim=0)
         loss = loss_fn(model(modified), img)
         print(loss)
         optimizer.zero_grad()
@@ -31,10 +33,8 @@ def eval_loop():
    out = model(modified)
    prep.show_image(out)
 
-
-
 images = ImageDataset()
-dataloader = DataLoader(images, batch_size=10, shuffle=True)
+dataloader = DataLoader(images, batch_size=1, shuffle=True)
 
 training_loop(dataloader)
 eval_loop()

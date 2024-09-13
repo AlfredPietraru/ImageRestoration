@@ -16,7 +16,7 @@ def create_initial_images(input_folder, output_folder, size=SIZE):
         img_path = os.path.join(input_folder, filename)
         img = cv2.imread(img_path)
         resized_img = cv2.resize(img, (512, 512))
-        output_path = os.path.join(output_folder, map_int_to_string(idx + 1))
+        output_path = os.path.join(output_folder, map_int_to_string(idx))
         cv2.imwrite(output_path, resized_img)
 
 def create_squares_coordinates(length = 20, square_numbers = 20):
@@ -60,7 +60,7 @@ def create_obscured_images(input_folder, output_folder):
     img_path = os.path.join(input_folder, filename)
     img = torch.tensor(cv2.imread(img_path))
     img = img * mask
-    output_path = os.path.join(output_folder, map_int_to_string(idx + 1))
+    output_path = os.path.join(output_folder, map_int_to_string(idx))
     cv2.imwrite(output_path, img.detach().numpy())
 
 
@@ -78,7 +78,7 @@ def get_full_training_image(idx : int):
     return pure_image, affected_image, mask.squeeze(dim=-1) 
 
 def get_only_training_image(batch_index : int, batch_size):
-    images_indexes = range(batch_index * batch_size + 1, (batch_index + 1) * batch_size + 1) 
+    images_indexes = range(batch_index * batch_size, (batch_index + 1) * batch_size) 
     filenames = list(map(map_int_to_string, images_indexes))
     images = torch.zeros(size=(batch_size, 3, SIZE, SIZE))
     for idx, filename in enumerate(filenames):
