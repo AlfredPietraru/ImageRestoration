@@ -1,10 +1,25 @@
 import torch
+import torchvision.transforms.functional
 import preprocessing as prep
 from net import AutoEncoder
 from torch.utils.data import  DataLoader
-from load_in_memory import ImageDataset
+import torchvision
+import os
 LEARNING_RATE = 1e-3
-EPOCHS = 5
+EPOCHS = 1
+
+class ImageDataset(torch.utils.data.Dataset):
+    def __init__(self):
+        self.root_dir = prep.MODIFIED_TRAINING_IMAGES_PATH
+
+    def __len__(self):
+        elements  = os.listdir(self.root_dir)
+        return len(elements)
+
+    def __getitem__(self, idx):
+        if (idx < 0 | idx > self.__len__()):
+            return None
+        return prep.get_full_training_image(idx)
 
 def training_loop(dataloader : DataLoader):
     model = AutoEncoder()
@@ -24,18 +39,16 @@ def training_loop(dataloader : DataLoader):
       torch.save(model.state_dict(), "./reconstruction.pth")
         
 
-def eval_loop():
+def eval_loop(idx : int):
    model = AutoEncoder()
    model.load_state_dict(torch.load("./reconstruction.pth"))
-   _, modified, _ = prep.get_full_training_image(87)
-   print(modified.shape)
-   modified = modified.unsqueeze(dim=0)
-   print(modified.shape)
-   out = model(modified)
-   prep.show_image(out.squeeze(dim=0))
+   img, mask = prep.get_test_image(idx)
+   final_image = img + model(img) * mask
+   prep.show_image(final_image.squeeze(dim=0))
+   rotated =torchvision.transforms.functional.rotate(final_image, 90)
 
 images = ImageDataset()
 dataloader = DataLoader(images, batch_size=1, shuffle=True)
 
 # training_loop(dataloader)
-eval_loop()
+eval_loop(2)

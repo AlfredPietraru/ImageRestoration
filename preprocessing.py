@@ -6,6 +6,9 @@ INITIAL_IMAGES_PATH = './images/train/initial_images/'
 GROUNDTRUTH_IMAGE_PATH = './images/train/groundtruth/'
 MODIFIED_TRAINING_IMAGES_PATH = './images/train/modified/'
 
+TEST_GROUND_TRUTH = './images/test/groundtruth/'
+TEST_INITIAL_IMAGES = './images/test/initial_images/'
+TEST_MODIFIED_IMAGES = './images/test/modified/'
 
 SIZE = 512
 def map_int_to_string(idx: int):
@@ -34,7 +37,7 @@ def show_image(img : torch.tensor):
     cv2.imshow("gata", img.detach().numpy())
     cv2.waitKey(0)
 
-def show_matrix(matrix):
+def show_mask(matrix):
     matrix = matrix.to(torch.uint8)
     cv2.imshow("gata", (matrix * 255).detach().numpy())
     cv2.waitKey(0)
@@ -63,7 +66,6 @@ def create_obscured_images(input_folder, output_folder):
     output_path = os.path.join(output_folder, map_int_to_string(idx))
     cv2.imwrite(output_path, img.detach().numpy())
 
-
 def get_full_training_image(idx : int):
     filename = map_int_to_string(idx)
     pure_image = cv2.imread(INITIAL_IMAGES_PATH + filename, cv2.IMREAD_COLOR)
@@ -87,6 +89,21 @@ def get_only_training_image(batch_index : int, batch_size):
         images[idx] = torch.tensor(img).permute((2, 0, 1))
     return images
 
+def get_test_image(idx : int):
+    filename = map_int_to_string(idx)
+    affected_image = cv2.imread(TEST_MODIFIED_IMAGES + filename, 
+                                cv2.IMREAD_COLOR)
+    affected_image = torch.tensor(affected_image)
+    masks = affected_image == 0
+    mask1, mask2, mask3 = torch.chunk(masks, 3,dim=2)
+    mask = torch.bitwise_and(torch.bitwise_and(mask1, mask2), mask3)
+    affected_image = affected_image.to(torch.float32).permute((2, 0, 1))
+    return affected_image.unsqueeze(dim=0), mask.squeeze(dim=-1) 
+
+
+def create_test_data():
+    create_initial_images(TEST_GROUND_TRUTH, TEST_INITIAL_IMAGES)
+    create_obscured_images(TEST_INITIAL_IMAGES, TEST_MODIFIED_IMAGES)
 
 def create_training_data():
     create_initial_images(GROUNDTRUTH_IMAGE_PATH, INITIAL_IMAGES_PATH)
