@@ -15,8 +15,6 @@ def training_loop(dataloader : DataLoader):
     for i in range(EPOCHS):
       for _, img_info in  enumerate(dataloader):
         img, modified, _ = img_info
-        modified = modified.squeeze(dim=0)
-        img = img.squeeze(dim=0)
         loss = loss_fn(model(modified), img)
         print(loss)
         optimizer.zero_grad()
@@ -29,12 +27,15 @@ def training_loop(dataloader : DataLoader):
 def eval_loop():
    model = AutoEncoder()
    model.load_state_dict(torch.load("./reconstruction.pth"))
-   img, modified, _ =prep.get_full_training_image(87)
+   _, modified, _ = prep.get_full_training_image(87)
+   print(modified.shape)
+   modified = modified.unsqueeze(dim=0)
+   print(modified.shape)
    out = model(modified)
-   prep.show_image(out)
+   prep.show_image(out.squeeze(dim=0))
 
 images = ImageDataset()
 dataloader = DataLoader(images, batch_size=1, shuffle=True)
 
-training_loop(dataloader)
+# training_loop(dataloader)
 eval_loop()
