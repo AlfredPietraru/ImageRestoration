@@ -1,43 +1,40 @@
 import torch
-import torch.linalg
 import preprocessing as prep
-from net import VAE
-from torch.distributions.multivariate_normal import MultivariateNormal
-from torch.distributions.normal import Normal
-SIZE = 512
-LATENT = 128
-BATCH_SIZE = 10
-EPOCHS = 50  
-LEARNING_RATE = 1e-2
+from net import AutoEncoder
+from torch.utils.data import  DataLoader
+from load_in_memory import ImageDataset
+LEARNING_RATE = 1e-3
+EPOCHS = 5
 
-def KL_divergence_one_value(avg : torch.Tensor, var : torch.Tensor):
-    return torch.trace(torch.exp(var)) + torch.pow(torch.norm(avg), 2) - \
-            LATENT - torch.linalg.det(torch.exp(var))
-
-def ELBO(x, x_recon, avg, var):
-    BCE = torch.nn.functional.binary_cross_entropy(x_recon, x, reduction='sum')
-    return BCE - KL_divergence_one_value(avg, var)
-
-model = VAE()
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-X = prep.get_only_training_image(0, BATCH_SIZE)
-X = X / 255
-X_recon, averages, variances = model(X)
-torch.autograd.set_detect_anomaly(True)
-for epoch in range(EPOCHS):
-    model.train() 
-    X = prep.get_only_training_image(0, BATCH_SIZE)
-    X = X / 255.0  
-    X_recon, averages, variances = model(X)
-    for i in range(BATCH_SIZE):
-        loss = ELBO(X[i], X_recon[i], averages[i], variances[i])
+def training_loop(dataloader : DataLoader):
+    model = AutoEncoder()
+    model.load_state_dict(torch.load("./reconstruction.pth"))
+    model.train()
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    loss_fn = torch.nn.MSELoss()
+    for i in range(EPOCHS):
+      for j in range(1, 81):
+        img, modified, _ = prep.get_full_training_image(j)
+        loss = loss_fn(model(modified), img)
         print(loss)
-        loss.backward(retain_graph=True)  # Backpropagation to compute gradients
-        optimizer.zero_grad()  # Reset gradients from the previous step
-        optimizer.step()       # Gradient descent update step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+      print("gata epoca %d", i)
+      torch.save(model.state_dict(), "./reconstruction.pth")
+        
 
-    if epoch % 10 == 0:
-        print(f'Epoch {epoch}/{EPOCHS}, Loss: {loss.item()}')
+def eval_loop():
+   model = AutoEncoder()
+   model.load_state_dict(torch.load("./reconstruction.pth"))
+   img, modified, _ =prep.get_full_training_image(87)
+   out = model(modified)
+   prep.show_image(out)
 
-print("Training complete.")
 
+
+images = ImageDataset()
+dataloader = DataLoader(images, batch_size=10, shuffle=True)
+
+training_loop(dataloader)
+eval_loop()
